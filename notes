@@ -1,0 +1,31 @@
+Client          Both            Server
+                init ssl
+------------------------------------------
+1)                              gen DH params
+                create ctx
+                                create server BIO
+                set up ssl
+---------------------------------------------------
+2) SSL_write                    SSL_read
+
+
+-implement part 2
+
+
+int buff len=0;
+char buff[BUFFER_SIZE]
+bufflen= SSL_read(ssl, buff, BUFFER_SIZE);
+_________________________________________________
+
+client <---> server
+FIN
+
+
+memset(buff,0,sizeof(buff))   utils.h
+                              print_errors
+                              buff2hex
+                              
+                              
+                              
+server  port
+client  server:port file
