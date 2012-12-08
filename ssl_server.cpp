@@ -6,6 +6,7 @@
 //----------------------------------------------------------------------------
 #include <string>
 #include <time.h>
+#include <iostream>
 using namespace std;
 
 #include <openssl/ssl.h>	// Secure Socket Layer library
@@ -13,6 +14,7 @@ using namespace std;
 #include <openssl/rsa.h>	// RSA algorithm etc
 #include <openssl/pem.h>	// For reading .pem files for RSA keys
 #include <openssl/err.h>
+#include <openssl/rand.h>   // Random numbers
 
 #include "utils.h"
 
@@ -98,11 +100,18 @@ int main(int argc, char** argv)
 	// 2. Receive a random number (the challenge) from the client
 	printf("2. Waiting for client to connect and send challenge...");
     
-    //SSL_read
-    string challenge="";
+    int len=16;
+    unsigned char* buff= new unsigned char[len+1];
+    buff[len] = 0;
+
+	//SSL_read;
+    SSL_read(ssl,buff,len);
+    
+    //REMEMBER TO DECRYPT
     
 	printf("DONE.\n");
-	printf("    (Challenge: \"%s\")\n", challenge.c_str());
+	cout << "Challenge : " << buff << endl;
+	//printf("    (Challenge: \"%s\")\n", buff);
 
     //-------------------------------------------------------------------------
 	// 3. Generate the SHA1 hash of the challenge
@@ -114,12 +123,17 @@ int main(int argc, char** argv)
 	//BIO_set_md;
 	//BIO_push;
 	//BIO_gets;
+	
+	//Hash the buff
+	unsigned char obuf[len];
+	
+	SHA1(buff,len,obuf);
+	
 
-    int mdlen=0;
-	string hash_string = "";
+
 
 	printf("SUCCESS.\n");
-	printf("    (SHA1 hash: \"%s\" (%d bytes))\n", hash_string.c_str(), mdlen);
+	printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuf, len);
 
     //-------------------------------------------------------------------------
 	// 4. Sign the key using the RSA private key specified in the
@@ -142,6 +156,9 @@ int main(int argc, char** argv)
 
 	//BIO_flush
 	//SSL_write
+	
+	SSL_write(ssl,obuf,len);
+	cout << endl << buff2hex((const unsigned char*)obuf,len)<< " " << endl;	
 
     printf("DONE.\n");
     
@@ -175,7 +192,7 @@ int main(int argc, char** argv)
 	// 8. Close the connection
 	printf("8. Closing connection...");
 
-	//SSL_shutdown
+	 int SSL_shutdown(SSL *ssl);
     //BIO_reset
     printf("DONE.\n");
 

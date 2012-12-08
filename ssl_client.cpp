@@ -5,6 +5,7 @@
 //              connection
 //----------------------------------------------------------------------------
 #include <string>
+#include <iostream>
 #include <time.h>               // to seed random number generator
 #include <sstream>          // stringstreams
 using namespace std;
@@ -15,6 +16,7 @@ using namespace std;
 #include <openssl/pem.h>	// For reading .pem files for RSA keys
 #include <openssl/err.h>	// ERR_get_error()
 #include <openssl/dh.h>		// Diffie-Helman algorithms & libraries
+#include <openssl/rand.h>   // Random numbers
 
 #include "utils.h"
 
@@ -92,22 +94,54 @@ int main(int argc, char** argv)
 	// 2. Send the server a random number
 	printf("2.  Sending challenge to the server...");
     
-    string randomNumber="31337";
-	//SSL_write
+    
+    int leng= 16;
+    unsigned char *a=new unsigned char[leng+1];
+
+	if(!RAND_bytes(a,leng))
+	{
+		exit(EXIT_FAILURE);
+	}
+   	a[leng]=0; 
+    
+	SSL_write(ssl,a,leng);
+	
+	
+	//REMEMBER TO ENCRYPT
     
     printf("SUCCESS.\n");
-	printf("    (Challenge sent: \"%s\")\n", randomNumber.c_str());
+    cout << a << endl;
+	//printf("    (Challenge sent: \"%s\")\n", s.c_str());
 
     //-------------------------------------------------------------------------
 	// 3a. Receive the signed key from the server
 	printf("3a. Receiving signed key from server...");
 
-    char* buff="FIXME";
-    int len=5;
+    char* recv = new char[leng+1];
+    recv[leng] = 0;
+
 	//SSL_read;
+    SSL_read(ssl,recv,leng);
 
 	printf("RECEIVED.\n");
-	printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)buff, len).c_str(), len);
+	printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)recv, leng).c_str(), leng);
+
+    //-------------------------------------------------------------------------
+	// 3a1. HASH challenge
+	printf("3a1. Generating SHA1 hash...");
+	
+	unsigned char obuff[leng];
+	
+	SHA1(a,leng,obuff);
+	
+
+
+
+	printf("SUCCESS.\n");
+	printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuff, leng);
+	//cout << endl << buff2hex((const unsigned char*)obuff,leng)<< " " << endl;	
+
+
 
     //-------------------------------------------------------------------------
 	// 3b. Authenticate the signed key
@@ -154,7 +188,7 @@ int main(int argc, char** argv)
 	// 6. Close the connection
 	printf("6.  Closing the connection...");
 
-	//SSL_shutdown
+	 int SSL_shutdown(SSL *ssl);
 	
 	printf("DONE.\n");
 	
