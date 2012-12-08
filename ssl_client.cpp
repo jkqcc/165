@@ -126,15 +126,15 @@ int main(int argc, char** argv)
     BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
     RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
     
-    int leng = RSA_size(rsapub);
+    int leng = RSA_size(rsapub)-12;
 	if(!RAND_bytes(a,leng))
 	{
 		exit(EXIT_FAILURE);
 	}    
     a[leng] = '\0';
-    bsize = RSA_public_encrypt(, (unsigned char *) a, ena, rsapub, RSA_PKCS1_PADDING);
+    bsize = RSA_public_encrypt(leng, (unsigned char *) a, ena, rsapub, RSA_PKCS1_PADDING);
 	
-	SSL_write(ssl,ena,leng);
+	SSL_write(ssl,ena,bsize);
 	
 	    
     printf("SUCCESS.\n");
