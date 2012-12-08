@@ -100,14 +100,29 @@ int main(int argc, char** argv)
 	// 2. Receive a random number (the challenge) from the client
 	printf("2. Waiting for client to connect and send challenge...");
     
-    int len=16;
-    unsigned char* buff= new unsigned char[len+1];
-    buff[len] = 0;
+    BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
+    RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
+    unsigned char *enbuff=new unsigned char[RSA_size(rsapub)];
+
+    
+    int len=RSA_size(rsapub);
+    enbuff[len-1]=0;
+    //unsigned char* buff= new unsigned char[len+1];
+    //buff[len] = 0;
+
+
 
 	//SSL_read;
-    SSL_read(ssl,buff,len);
+    SSL_read(ssl,enbuff,len);
     
-    //REMEMBER TO DECRYPT
+    //Decrypting
+    BIO * rsaprivin = BIO_new_file("rsaprivatekey.pem","r");
+    RSA * rsapriv = PEM_read_bio_RSAPrivateKey(rsaprivin,NULL,0,NULL);
+    unsigned char *buff=new unsigned char[len];
+    RSA_private_decrypt(len,enbuff,buff,rsapriv, RSA_PKCS1_PADDING);
+    
+    
+    
     
 	printf("DONE.\n");
 	cout << "Challenge : " << buff << endl;
@@ -158,6 +173,7 @@ int main(int argc, char** argv)
 	//SSL_write
 	
 	SSL_write(ssl,obuf,len);
+	BIO_flush(server);
 	cout << endl << buff2hex((const unsigned char*)obuf,len)<< " " << endl;	
 
     printf("DONE.\n");
@@ -167,10 +183,12 @@ int main(int argc, char** argv)
 	printf("6. Receiving file request from client...");
 
     //SSL_read
+    
     char file[BUFFER_SIZE];
     memset(file,0,sizeof(file));
+    SSL_read(ssl,file,BUFFER_SIZE);
     printf("RECEIVED.\n");
-    printf("    (File requested: \"%s\"\n", file);
+    printf("    (File requested: \"%s\")\n", file);
 
     //-------------------------------------------------------------------------
 	// 7. Send the requested file back to the client (if it exists)
@@ -182,8 +200,13 @@ int main(int argc, char** argv)
 	//BIO_puts(server, "fnf");
     //BIO_read(bfile, buffer, BUFFER_SIZE)) > 0)
 	//SSL_write(ssl, buffer, bytesRead);
-
+	
     int bytesSent=0;
+    
+    //char fbuff[1024];
+    //BIO * fil = BIO_new_file(file,"r");
+    //int flen = BIO_read(fil,fbuff,sizeof(fbuff));
+    //printf(fbuff);
     
     printf("SENT.\n");
     printf("    (Bytes sent: %d)\n", bytesSent);

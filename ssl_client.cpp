@@ -43,6 +43,8 @@ int main(int argc, char** argv)
 	}
 	char* server = argv[1];
 	char* filename = argv[2];
+	size_t flen = strlen(filename);
+	cout << flen << endl;
 	
 	printf("------------\n");
 	printf("-- CLIENT --\n");
@@ -94,23 +96,31 @@ int main(int argc, char** argv)
 	// 2. Send the server a random number
 	printf("2.  Sending challenge to the server...");
     
-    
-    int leng= 16;
-    unsigned char *a=new unsigned char[leng+1];
+    BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
+    RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
+    unsigned char *ena=new unsigned char[RSA_size(rsapub)];
 
-	if(!RAND_bytes(a,leng))
-	{
-		exit(EXIT_FAILURE);
-	}
-   	a[leng]=0; 
-    
-	SSL_write(ssl,a,leng);
+    int leng= RSA_size(rsapub);
+    unsigned char *a=new unsigned char[leng];
+
+
+	//if(!RAND_bytes(a,leng))
+	//{
+		//exit(EXIT_FAILURE);
+	//}
+	for(int i = 0; i < leng; i++){a[i]='1';}
+   	//a[leng-1]=0; 
+    //ena[leng-1]=0;
+
+
+      
+    cout << RSA_public_encrypt(leng,a,ena, rsapub, RSA_PKCS1_PADDING) << endl;
+
+	SSL_write(ssl,ena,leng);
 	
-	
-	//REMEMBER TO ENCRYPT
-    
+	    
     printf("SUCCESS.\n");
-    cout << a << endl;
+    cout << a << endl;// << ena << endl;
 	//printf("    (Challenge sent: \"%s\")\n", s.c_str());
 
     //-------------------------------------------------------------------------
@@ -139,7 +149,7 @@ int main(int argc, char** argv)
 
 	printf("SUCCESS.\n");
 	printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuff, leng);
-	//cout << endl << buff2hex((const unsigned char*)obuff,leng)<< " " << endl;	
+	cout << endl << buff2hex((const unsigned char*)obuff,leng)<< " " << endl;	
 
 
 
@@ -169,6 +179,9 @@ int main(int argc, char** argv)
 	//BIO_flush
     //BIO_puts
 	//SSL_write
+	
+	SSL_write(ssl,filename,flen);
+	BIO_flush(client);
 
     printf("SENT.\n");
 	printf("    (File requested: \"%s\")\n", filename);
