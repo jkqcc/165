@@ -96,6 +96,7 @@ int main(int argc, char** argv)
 	// 2. Send the server a random number
 	printf("2.  Sending challenge to the server...");
     
+    /*
     BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
     RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
     unsigned char *ena=new unsigned char[RSA_size(rsapub)];
@@ -104,23 +105,40 @@ int main(int argc, char** argv)
     unsigned char *a=new unsigned char[leng];
 
 
-	//if(!RAND_bytes(a,leng))
-	//{
+	if(!RAND_bytes(a,leng))
+	{
 		//exit(EXIT_FAILURE);
-	//}
-	for(int i = 0; i < leng; i++){a[i]='1';}
+	}
    	//a[leng-1]=0; 
     //ena[leng-1]=0;
-
 
       
     cout << RSA_public_encrypt(leng,a,ena, rsapub, RSA_PKCS1_PADDING) << endl;
 
+	*/
+	
+	unsigned char * a =  (unsigned char *) malloc(500);
+	unsigned char* ena = (unsigned char *) malloc(500);
+    unsigned char* decrypted = (unsigned char *) malloc(500);
+    int bsize;
+
+	
+    BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
+    RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
+    
+    int leng = RSA_size(rsapub);
+	if(!RAND_bytes(a,leng))
+	{
+		exit(EXIT_FAILURE);
+	}    
+    a[leng] = '\0';
+    bsize = RSA_public_encrypt(, (unsigned char *) a, ena, rsapub, RSA_PKCS1_PADDING);
+	
 	SSL_write(ssl,ena,leng);
 	
 	    
     printf("SUCCESS.\n");
-    cout << a << endl;// << ena << endl;
+    cout << bsize << endl;
 	//printf("    (Challenge sent: \"%s\")\n", s.c_str());
 
     //-------------------------------------------------------------------------
@@ -140,16 +158,16 @@ int main(int argc, char** argv)
 	// 3a1. HASH challenge
 	printf("3a1. Generating SHA1 hash...");
 	
-	unsigned char obuff[leng];
+	//unsigned char obuff[leng];
 	
-	SHA1(a,leng,obuff);
+	//SHA1(a,leng,obuff);
 	
 
 
 
 	printf("SUCCESS.\n");
-	printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuff, leng);
-	cout << endl << buff2hex((const unsigned char*)obuff,leng)<< " " << endl;	
+	//printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuff, leng);
+	//cout << endl << buff2hex((const unsigned char*)obuff,leng)<< " " << endl;	
 
 
 

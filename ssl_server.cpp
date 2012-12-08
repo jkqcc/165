@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     //-------------------------------------------------------------------------
 	// 2. Receive a random number (the challenge) from the client
 	printf("2. Waiting for client to connect and send challenge...");
-    
+    /*
     BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
     RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
     unsigned char *enbuff=new unsigned char[RSA_size(rsapub)];
@@ -113,19 +113,30 @@ int main(int argc, char** argv)
 
 
 	//SSL_read;
-    SSL_read(ssl,enbuff,len);
+	*/
+
+	unsigned char* ena = (unsigned char *) malloc(500);
+	unsigned char* buff = (unsigned char *) malloc(500);
+    BIO * rsaprivin = BIO_new_file("rsaprivatekey.pem","r");
+    RSA * rsapriv = PEM_read_bio_RSAPrivateKey(rsaprivin,NULL,0,NULL);
+    int len = RSA_size(rsapriv);
+    SSL_read(ssl,ena,len);
+    int dsize;
+
+    dsize = RSA_private_decrypt(128, (unsigned char *) ena, buff, rsapriv, RSA_PKCS1_PADDING);
+    //bsize = RSA_public_encrypt(sizeof(a), (unsigned char *) a, ena, rsapub, RSA_PKCS1_PADDING);
     
-    //Decrypting
+    /*Decrypting
     BIO * rsaprivin = BIO_new_file("rsaprivatekey.pem","r");
     RSA * rsapriv = PEM_read_bio_RSAPrivateKey(rsaprivin,NULL,0,NULL);
     unsigned char *buff=new unsigned char[len];
     RSA_private_decrypt(len,enbuff,buff,rsapriv, RSA_PKCS1_PADDING);
-    
+    */
     
     
     
 	printf("DONE.\n");
-	cout << "Challenge : " << buff << endl;
+	cout << "Challenge : " << dsize << endl;
 	//printf("    (Challenge: \"%s\")\n", buff);
 
     //-------------------------------------------------------------------------
@@ -140,15 +151,15 @@ int main(int argc, char** argv)
 	//BIO_gets;
 	
 	//Hash the buff
-	unsigned char obuf[len];
+	//unsigned char obuf[len];
 	
-	SHA1(buff,len,obuf);
+	//SHA1(buff,len,obuf);
 	
 
 
 
 	printf("SUCCESS.\n");
-	printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuf, len);
+	//printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuf, len);
 
     //-------------------------------------------------------------------------
 	// 4. Sign the key using the RSA private key specified in the
@@ -172,9 +183,9 @@ int main(int argc, char** argv)
 	//BIO_flush
 	//SSL_write
 	
-	SSL_write(ssl,obuf,len);
+	SSL_write(ssl,buff,len);
 	BIO_flush(server);
-	cout << endl << buff2hex((const unsigned char*)obuf,len)<< " " << endl;	
+	cout << endl << buff2hex((const unsigned char*)buff,len)<< " " << endl;	
 
     printf("DONE.\n");
     
