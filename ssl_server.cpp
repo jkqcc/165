@@ -99,21 +99,6 @@ int main(int argc, char** argv)
     //-------------------------------------------------------------------------
 	// 2. Receive a random number (the challenge) from the client
 	printf("2. Waiting for client to connect and send challenge...");
-    /*
-    BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
-    RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
-    unsigned char *enbuff=new unsigned char[RSA_size(rsapub)];
-
-    
-    int len=RSA_size(rsapub);
-    enbuff[len-1]=0;
-    //unsigned char* buff= new unsigned char[len+1];
-    //buff[len] = 0;
-
-
-
-	//SSL_read;
-	*/
 
 	unsigned char* ena = (unsigned char *) malloc(500);
 	unsigned char* buff = (unsigned char *) malloc(500);
@@ -122,78 +107,50 @@ int main(int argc, char** argv)
     int len = RSA_size(rsapriv);
     SSL_read(ssl,ena,len);
     int dsize;
+    int osize = 16;
 
-    dsize = RSA_private_decrypt(128, (unsigned char *) ena, buff, rsapriv, RSA_PKCS1_PADDING);
-    //bsize = RSA_public_encrypt(sizeof(a), (unsigned char *) a, ena, rsapub, RSA_PKCS1_PADDING);
-    
-    /*Decrypting
-    BIO * rsaprivin = BIO_new_file("rsaprivatekey.pem","r");
-    RSA * rsapriv = PEM_read_bio_RSAPrivateKey(rsaprivin,NULL,0,NULL);
-    unsigned char *buff=new unsigned char[len];
-    RSA_private_decrypt(len,enbuff,buff,rsapriv, RSA_PKCS1_PADDING);
-    */
-    
+    dsize = RSA_private_decrypt(len, (unsigned char *) ena, buff, rsapriv, RSA_PKCS1_PADDING);
+   
     
     
 	printf("DONE.\n");
-	cout << "Challenge : " << dsize << endl;
-	//printf("    (Challenge: \"%s\")\n", buff);
+	cout << "Challenge : " << buff2hex((const unsigned char*)ena,len) << endl;
+
 
     //-------------------------------------------------------------------------
 	// 3. Generate the SHA1 hash of the challenge
 	printf("3. Generating SHA1 hash...");
 
-	//BIO_new(BIO_s_mem());
-	//BIO_write
-	//BIO_new(BIO_f_md());
-	//BIO_set_md;
-	//BIO_push;
-	//BIO_gets;
+	unsigned char obuf[osize];
+	SHA1(buff,osize,obuf);
 	
-	//Hash the buff
-	//unsigned char obuf[len];
-	
-	//SHA1(buff,len,obuf);
-	
-
-
-
 	printf("SUCCESS.\n");
-	//printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuf, len);
+	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuf,osize)<< " (16 Bytes) " << endl;
 
     //-------------------------------------------------------------------------
 	// 4. Sign the key using the RSA private key specified in the
 	//     file "rsaprivatekey.pem"
 	printf("4. Signing the key...");
 
-    //PEM_read_bio_RSAPrivateKey
-    //RSA_private_encrypt
-
-    int siglen=0;
-    char* signature="FIXME";
+    int siglen=RSA_private_encrypt(osize,obuf,ena, rsapriv, RSA_PKCS1_PADDING);
 
     printf("DONE.\n");
     printf("    (Signed key length: %d bytes)\n", siglen);
-    printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)signature, siglen).c_str(), siglen);
+    printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)ena, siglen).c_str(), siglen);
 
     //-------------------------------------------------------------------------
 	// 5. Send the signature to the client for authentication
 	printf("5. Sending signature to client for authentication...");
-
-	//BIO_flush
-	//SSL_write
 	
-	SSL_write(ssl,buff,len);
+	SSL_write(ssl,ena,len);
 	BIO_flush(server);
-	cout << endl << buff2hex((const unsigned char*)buff,len)<< " " << endl;	
+	cout << endl << buff2hex((const unsigned char*)ena,len)<< " " << endl;	
 
     printf("DONE.\n");
     
     //-------------------------------------------------------------------------
 	// 6. Receive a filename request from the client
 	printf("6. Receiving file request from client...");
-
-    //SSL_read
     
     char file[BUFFER_SIZE];
     memset(file,0,sizeof(file));
@@ -238,3 +195,5 @@ int main(int argc, char** argv)
 	BIO_free_all(server);
 	return EXIT_SUCCESS;
 }
+
+//Ends of numbers don't seem to match up

@@ -95,28 +95,7 @@ int main(int argc, char** argv)
     //-------------------------------------------------------------------------
 	// 2. Send the server a random number
 	printf("2.  Sending challenge to the server...");
-    
-    /*
-    BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
-    RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
-    unsigned char *ena=new unsigned char[RSA_size(rsapub)];
 
-    int leng= RSA_size(rsapub);
-    unsigned char *a=new unsigned char[leng];
-
-
-	if(!RAND_bytes(a,leng))
-	{
-		//exit(EXIT_FAILURE);
-	}
-   	//a[leng-1]=0; 
-    //ena[leng-1]=0;
-
-      
-    cout << RSA_public_encrypt(leng,a,ena, rsapub, RSA_PKCS1_PADDING) << endl;
-
-	*/
-	
 	unsigned char * a =  (unsigned char *) malloc(500);
 	unsigned char* ena = (unsigned char *) malloc(500);
     unsigned char* decrypted = (unsigned char *) malloc(500);
@@ -138,19 +117,20 @@ int main(int argc, char** argv)
 	
 	    
     printf("SUCCESS.\n");
-    cout << bsize << endl;
-	//printf("    (Challenge sent: \"%s\")\n", s.c_str());
-
+    cout << "Challenge sent: " << buff2hex((const unsigned char*)ena,leng) << endl;
+	
     //-------------------------------------------------------------------------
 	// 3a. Receive the signed key from the server
 	printf("3a. Receiving signed key from server...");
 
-    char* recv = new char[leng+1];
-    recv[leng] = 0;
+    unsigned char* recv = new unsigned char[leng+12];
 
-	//SSL_read;
-    SSL_read(ssl,recv,leng);
+    SSL_read(ssl,recv,leng+12);
+    int dsize;
+    int osize=16;
 
+    dsize = RSA_public_decrypt(leng+12,recv, ena, rsapub, RSA_PKCS1_PADDING);
+    
 	printf("RECEIVED.\n");
 	printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)recv, leng).c_str(), leng);
 
@@ -158,37 +138,28 @@ int main(int argc, char** argv)
 	// 3a1. HASH challenge
 	printf("3a1. Generating SHA1 hash...");
 	
-	//unsigned char obuff[leng];
+	unsigned char obuff[osize];
+	SHA1(a,osize,obuff);
 	
-	//SHA1(a,leng,obuff);
-	
-
-
-
 	printf("SUCCESS.\n");
-	//printf("    (SHA1 hash: \"%s\" (%d bytes))\n", obuff, leng);
-	//cout << endl << buff2hex((const unsigned char*)obuff,leng)<< " " << endl;	
-
+	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuff,osize)<< " (16 Bytes) " << endl;	
 
 
     //-------------------------------------------------------------------------
 	// 3b. Authenticate the signed key
 	printf("3b. Authenticating key...");
 
-	//BIO_new(BIO_s_mem())
-	//BIO_write
-	//BIO_new_file
-	//PEM_read_bio_RSA_PUBKEY
-	//RSA_public_decrypt
-	//BIO_free
-	
-	string generated_key="";
-	string decrypted_key="";
-    
+	string generated_key=buff2hex((const unsigned char*)obuff,osize);
+	string decrypted_key=buff2hex((const unsigned char*)ena,osize);
+    if(generated_key == decrypted_key){
 	printf("AUTHENTICATED\n");
 	printf("    (Generated key: %s)\n", generated_key.c_str());
 	printf("    (Decrypted key: %s)\n", decrypted_key.c_str());
-
+	}
+	else
+	{
+		printf("NOT AUTHENTICATED\n");
+	}
     //-------------------------------------------------------------------------
 	// 4. Send the server a file request
 	printf("4.  Sending file request to server...");
