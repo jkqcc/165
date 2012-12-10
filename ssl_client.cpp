@@ -185,8 +185,25 @@ int main(int argc, char** argv)
     //SSL_read
 	//BIO_write
 	//BIO_free
+	BIO_flush(client);
+	int bytesRecieved=0;
+    char fbuff[leng];
+    memset(fbuff,0,leng);
+    BIO * fil = BIO_new_file("output.txt","w");
+
+	int actualWritten=0;
+
+	while((actualWritten = SSL_read(ssl,fbuff,leng)) >= 1)
+	{
+		
+	//	printf("fbuf = %s",fbuff);
+		bytesRecieved +=BIO_write(fil,fbuff,actualWritten);
+		memset(fbuff,0,leng);
+	}
+	
 
 	printf("FILE RECEIVED.\n");
+	printf("    (Bytes received: %d)\n", bytesRecieved);
 
     //-------------------------------------------------------------------------
 	// 6. Close the connection

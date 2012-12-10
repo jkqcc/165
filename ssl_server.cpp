@@ -165,7 +165,7 @@ int main(int argc, char** argv)
 	printf("7. Attempting to send requested file to client...");
 
 	PAUSE(2);
-	//BIO_flush
+	BIO_flush(server);
 	//BIO_new_file
 	//BIO_puts(server, "fnf");
     //BIO_read(bfile, buffer, BUFFER_SIZE)) > 0)
@@ -173,12 +173,20 @@ int main(int argc, char** argv)
 	
     int bytesSent=0;
     char fbuff[leng];
+    memset(fbuff,0,leng);
     //string fname = file;
     BIO * fil = BIO_new_file(file,"r");
-    BIO_read(fil,fbuff,leng);
-    
-		cout << fbuff << endl;
+	
+	int actualRead=0;
+	int actualWritten=0;
+
+	while((actualRead = BIO_read(fil, fbuff, leng-1)) >= 1)
+	{
+
+		bytesSent +=SSL_write(ssl,fbuff,actualRead);
 		memset(fbuff,0,leng);
+	}
+
 	
     //char fbuff[1024];
     //BIO * fil = BIO_new_file(file,"r");
