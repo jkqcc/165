@@ -172,7 +172,14 @@ int main(int argc, char** argv)
 	//SSL_write(ssl, buffer, bytesRead);
 	
     int bytesSent=0;
+    char fbuff[leng];
+    //string fname = file;
+    BIO * fil = BIO_new_file(file,"r");
+    BIO_read(fil,fbuff,leng);
     
+		cout << fbuff << endl;
+		memset(fbuff,0,leng);
+	
     //char fbuff[1024];
     //BIO * fil = BIO_new_file(file,"r");
     //int flen = BIO_read(fil,fbuff,sizeof(fbuff));
@@ -198,4 +205,4 @@ int main(int argc, char** argv)
 	return EXIT_SUCCESS;
 }
 
-//Ends of numbers don't seem to match up
+
