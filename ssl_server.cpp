@@ -105,9 +105,12 @@ int main(int argc, char** argv)
     BIO * rsaprivin = BIO_new_file("rsaprivatekey.pem","r");
     RSA * rsapriv = PEM_read_bio_RSAPrivateKey(rsaprivin,NULL,0,NULL);
     int len = RSA_size(rsapriv);
+	int leng = len-12;
+	int osize = 16;
+	
     SSL_read(ssl,ena,len);
     int dsize;
-    int osize = 16;
+
 
     dsize = RSA_private_decrypt(len, (unsigned char *) ena, buff, rsapriv, RSA_PKCS1_PADDING);
    
@@ -116,35 +119,34 @@ int main(int argc, char** argv)
 	printf("DONE.\n");
 	cout << "Challenge : " << buff2hex((const unsigned char*)ena,len) << endl;
 
-
     //-------------------------------------------------------------------------
 	// 3. Generate the SHA1 hash of the challenge
 	printf("3. Generating SHA1 hash...");
 
-	unsigned char obuf[osize];
-	SHA1(buff,osize,obuf);
+	unsigned char obuff[osize];
+	SHA1(buff,dsize,obuff);
 	
 	printf("SUCCESS.\n");
-	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuf,osize)<< " (16 Bytes) " << endl;
+	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuff,osize)<< " (" << osize << " Bytes) " << endl;
 
     //-------------------------------------------------------------------------
 	// 4. Sign the key using the RSA private key specified in the
 	//     file "rsaprivatekey.pem"
 	printf("4. Signing the key...");
-
-    int siglen=RSA_private_encrypt(osize,obuf,ena, rsapriv, RSA_PKCS1_PADDING);
+	unsigned char sendh[len];
+    int siglen=RSA_private_encrypt(leng,obuff,sendh, rsapriv, RSA_PKCS1_PADDING);
 
     printf("DONE.\n");
     printf("    (Signed key length: %d bytes)\n", siglen);
-    printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)ena, siglen).c_str(), siglen);
+    printf("    (Encrypted Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)sendh, siglen).c_str(), siglen);
 
     //-------------------------------------------------------------------------
 	// 5. Send the signature to the client for authentication
 	printf("5. Sending signature to client for authentication...");
 	
-	SSL_write(ssl,ena,len);
+	SSL_write(ssl,sendh,siglen);
 	BIO_flush(server);
-	cout << endl << buff2hex((const unsigned char*)ena,len)<< " " << endl;	
+	//cout << endl << buff2hex((const unsigned char*)ena,len)<< " " << endl;	
 
     printf("DONE.\n");
     

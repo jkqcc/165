@@ -98,59 +98,61 @@ int main(int argc, char** argv)
 
 	unsigned char * a =  (unsigned char *) malloc(500);
 	unsigned char* ena = (unsigned char *) malloc(500);
-    unsigned char* decrypted = (unsigned char *) malloc(500);
     int bsize;
-
+	int osize = 16;
 	
     BIO * rsapubin = BIO_new_file("rsapublickey.pem","r");
     RSA * rsapub = PEM_read_bio_RSA_PUBKEY(rsapubin,NULL,0,NULL);
     
     int leng = RSA_size(rsapub)-12;
+    int len = leng + 12;
 	if(!RAND_bytes(a,leng))
 	{
 		exit(EXIT_FAILURE);
 	}    
-    a[leng] = '\0';
+
     bsize = RSA_public_encrypt(leng, (unsigned char *) a, ena, rsapub, RSA_PKCS1_PADDING);
 	
 	SSL_write(ssl,ena,bsize);
 	
 	    
     printf("SUCCESS.\n");
-    cout << "Challenge sent: " << buff2hex((const unsigned char*)ena,leng) << endl;
+    cout << "PlainText Challenge: " << buff2hex((const unsigned char*)a,leng) << endl;
+    cout << "Encrypted Challenge: " << buff2hex((const unsigned char*)ena,bsize) << endl;
 	
     //-------------------------------------------------------------------------
 	// 3a. Receive the signed key from the server
 	printf("3a. Receiving signed key from server...");
 
-    unsigned char* recv = new unsigned char[leng+12];
-
-    SSL_read(ssl,recv,leng+12);
+    unsigned char* recv = new unsigned char[len];
+    unsigned char* reca = new unsigned char[leng];
+	
+    SSL_read(ssl,recv,len);
     int dsize;
-    int osize=16;
+ 
 
-    dsize = RSA_public_decrypt(leng+12,recv, ena, rsapub, RSA_PKCS1_PADDING);
-    
-	printf("RECEIVED.\n");
-	printf("    (Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)recv, leng).c_str(), leng);
+
+    dsize = RSA_public_decrypt(len,recv, reca, rsapub, RSA_PKCS1_PADDING);
+    printf("RECEIVED.\n");
+	printf("    (Plaintext Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)reca, dsize).c_str(), dsize);
 
     //-------------------------------------------------------------------------
 	// 3a1. HASH challenge
 	printf("3a1. Generating SHA1 hash...");
-	
+
 	unsigned char obuff[osize];
-	SHA1(a,osize,obuff);
+	SHA1(a,leng,obuff);
 	
 	printf("SUCCESS.\n");
-	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuff,osize)<< " (16 Bytes) " << endl;	
+	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuff,osize)<< " (" << osize<< " Bytes) " << endl;	
 
 
     //-------------------------------------------------------------------------
 	// 3b. Authenticate the signed key
 	printf("3b. Authenticating key...");
-
+	
 	string generated_key=buff2hex((const unsigned char*)obuff,osize);
-	string decrypted_key=buff2hex((const unsigned char*)ena,osize);
+	string decrypted_key=buff2hex((const unsigned char*)reca,osize);
     if(generated_key == decrypted_key){
 	printf("AUTHENTICATED\n");
 	printf("    (Generated key: %s)\n", generated_key.c_str());
