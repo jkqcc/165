@@ -95,9 +95,11 @@ int main(int argc, char** argv)
 
 	printf("DONE.\n");
 	printf("    (Now listening on port: %s)\n", port);
+	
 
     //-------------------------------------------------------------------------
 	// 2. Receive a random number (the challenge) from the client
+	cout << endl;
 	printf("2. Waiting for client to connect and send challenge...");
 
 	unsigned char* ena = (unsigned char *) malloc(500);
@@ -117,21 +119,23 @@ int main(int argc, char** argv)
     
     
 	printf("DONE.\n");
-	cout << "Challenge : " << buff2hex((const unsigned char*)ena,len) << endl;
+	cout << "Challenge : " << endl << buff2hex((const unsigned char*)ena,len) << endl;
 
     //-------------------------------------------------------------------------
 	// 3. Generate the SHA1 hash of the challenge
+	cout << endl;
 	printf("3. Generating SHA1 hash...");
 
 	unsigned char obuff[osize];
 	SHA1(buff,dsize,obuff);
 	
 	printf("SUCCESS.\n");
-	cout << "SHA1 hash: " << buff2hex((const unsigned char*)obuff,osize)<< " (" << osize << " Bytes) " << endl;
+	cout << "SHA1 hash: " << endl <<buff2hex((const unsigned char*)obuff,osize)<< " (" << osize << " Bytes) " << endl;
 
     //-------------------------------------------------------------------------
 	// 4. Sign the key using the RSA private key specified in the
 	//     file "rsaprivatekey.pem"
+	cout << endl;
 	printf("4. Signing the key...");
 	unsigned char sendh[len];
     int siglen=RSA_private_encrypt(leng,obuff,sendh, rsapriv, RSA_PKCS1_PADDING);
@@ -142,6 +146,7 @@ int main(int argc, char** argv)
 
     //-------------------------------------------------------------------------
 	// 5. Send the signature to the client for authentication
+	cout << endl;
 	printf("5. Sending signature to client for authentication...");
 	
 	SSL_write(ssl,sendh,siglen);
@@ -152,6 +157,7 @@ int main(int argc, char** argv)
     
     //-------------------------------------------------------------------------
 	// 6. Receive a filename request from the client
+	cout << endl;
 	printf("6. Receiving file request from client...");
     
     char file[BUFFER_SIZE];
@@ -162,6 +168,7 @@ int main(int argc, char** argv)
 
     //-------------------------------------------------------------------------
 	// 7. Send the requested file back to the client (if it exists)
+	cout << endl;
 	printf("7. Attempting to send requested file to client...");
 
 	PAUSE(2);
@@ -177,7 +184,16 @@ int main(int argc, char** argv)
     memset(fbuff,0,leng);
     //string fname = file;
     BIO * fil = BIO_new_file(file,"r");
-	
+	if(fil == 0)
+	{
+	 cout << endl << "Not found... Exiting" << endl;
+	 
+
+	SSL_shutdown(ssl);
+	BIO_free_all(server);
+	return 0;
+		
+	}
 	int actualRead=0;
 	int actualWritten=0;
 	int actualenc = 0;
@@ -201,9 +217,10 @@ int main(int argc, char** argv)
 
     //-------------------------------------------------------------------------
 	// 8. Close the connection
+	cout << endl;
 	printf("8. Closing connection...");
 
-	 int SSL_shutdown(SSL *ssl);
+	 SSL_shutdown(ssl);
     //BIO_reset
     printf("DONE.\n");
 

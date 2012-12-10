@@ -91,9 +91,11 @@ int main(int argc, char** argv)
 
 	printf("SUCCESS.\n");
 	printf("    (Now connected to %s)\n", server);
+	
 
     //-------------------------------------------------------------------------
 	// 2. Send the server a random number
+	cout << endl;
 	printf("2.  Sending challenge to the server...");
 
 	unsigned char * a =  (unsigned char *) malloc(500);
@@ -115,13 +117,15 @@ int main(int argc, char** argv)
 	
 	SSL_write(ssl,ena,bsize);
 	
-	    
+
+	int SSL_shutdown(SSL *ssl);    
     printf("SUCCESS.\n");
-    cout << "PlainText Challenge: " << buff2hex((const unsigned char*)a,leng) << endl;
-    cout << "Encrypted Challenge: " << buff2hex((const unsigned char*)ena,bsize) << endl;
+    cout << "PlainText Challenge: " << endl << buff2hex((const unsigned char*)a,leng) << endl;
+    cout << "Encrypted Challenge: " << endl << buff2hex((const unsigned char*)ena,bsize) << endl << endl;
 	
     //-------------------------------------------------------------------------
 	// 3a. Receive the signed key from the server
+	cout << endl;
 	printf("3a. Receiving signed key from server...");
 
     unsigned char* recv = new unsigned char[len];
@@ -135,9 +139,10 @@ int main(int argc, char** argv)
     dsize = RSA_public_decrypt(len,recv, reca, rsapub, RSA_PKCS1_PADDING);
     printf("RECEIVED.\n");
 	printf("    (Plaintext Signature: \"%s\" (%d bytes))\n", buff2hex((const unsigned char*)reca, dsize).c_str(), dsize);
-
+	cout << "Plaintext Signature: " << endl << buff2hex((const unsigned char*)reca, dsize) << " (" << dsize << ") bytes." << endl;
     //-------------------------------------------------------------------------
 	// 3a1. HASH challenge
+	cout << endl;
 	printf("3a1. Generating SHA1 hash...");
 
 	unsigned char obuff[osize];
@@ -149,6 +154,7 @@ int main(int argc, char** argv)
 
     //-------------------------------------------------------------------------
 	// 3b. Authenticate the signed key
+	cout << endl;
 	printf("3b. Authenticating key...");
 	
 	string generated_key=buff2hex((const unsigned char*)obuff,osize);
@@ -164,6 +170,7 @@ int main(int argc, char** argv)
 	}
     //-------------------------------------------------------------------------
 	// 4. Send the server a file request
+	cout << endl;
 	printf("4.  Sending file request to server...");
 
 	PAUSE(2);
@@ -179,6 +186,7 @@ int main(int argc, char** argv)
 
     //-------------------------------------------------------------------------
 	// 5. Receives and displays the contents of the file requested
+	cout << endl;
 	printf("5.  Receiving response from server...");
 
     //BIO_new_file
@@ -202,7 +210,16 @@ int main(int argc, char** argv)
 		memset(fbuff,0,leng);
 		memset(dfbuff,0,leng-1);
 	}
-	
+	if(bytesRecieved ==0)
+	{
+		cout << endl << "Yea.... Nothing there..... Exiting " << endl;
+		SSL_shutdown(ssl);
+		SSL_CTX_free(ctx);
+		SSL_free(ssl);
+		return 0;
+	}
+		
+
 
 	printf("FILE RECEIVED.\n");
 	printf("    (Bytes received: %d)\n", bytesRecieved);
@@ -211,7 +228,7 @@ int main(int argc, char** argv)
 	// 6. Close the connection
 	printf("6.  Closing the connection...");
 
-	int SSL_shutdown(SSL *ssl);
+	SSL_shutdown(ssl);
 	
 	printf("DONE.\n");
 	
