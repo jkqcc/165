@@ -173,18 +173,21 @@ int main(int argc, char** argv)
 	
     int bytesSent=0;
     char fbuff[leng];
+    char efbuff[len];
     memset(fbuff,0,leng);
     //string fname = file;
     BIO * fil = BIO_new_file(file,"r");
 	
 	int actualRead=0;
 	int actualWritten=0;
+	int actualenc = 0;
 
 	while((actualRead = BIO_read(fil, fbuff, leng-1)) >= 1)
 	{
-
-		bytesSent +=SSL_write(ssl,fbuff,actualRead);
+		actualenc = RSA_private_encrypt(actualRead,(const unsigned char*)fbuff,(unsigned char*)efbuff, rsapriv, RSA_PKCS1_PADDING);
+		bytesSent +=SSL_write(ssl,efbuff,actualenc);
 		memset(fbuff,0,leng);
+		memset(efbuff,0,len);
 	}
 
 	

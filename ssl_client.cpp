@@ -188,17 +188,19 @@ int main(int argc, char** argv)
 	BIO_flush(client);
 	int bytesRecieved=0;
     char fbuff[leng];
+    char dfbuff[leng-1];
     memset(fbuff,0,leng);
     BIO * fil = BIO_new_file("output.txt","w");
 
 	int actualWritten=0;
+	int actualdec = 0;
 
-	while((actualWritten = SSL_read(ssl,fbuff,leng)) >= 1)
+	while((actualWritten = SSL_read(ssl,fbuff,len)) >= 1)
 	{
-		
-	//	printf("fbuf = %s",fbuff);
-		bytesRecieved +=BIO_write(fil,fbuff,actualWritten);
+		actualdec = RSA_public_decrypt(actualWritten,(const unsigned char*)fbuff, (unsigned char*)dfbuff, rsapub, RSA_PKCS1_PADDING);
+		bytesRecieved +=BIO_write(fil,dfbuff,actualdec);
 		memset(fbuff,0,leng);
+		memset(dfbuff,0,leng-1);
 	}
 	
 
@@ -209,7 +211,7 @@ int main(int argc, char** argv)
 	// 6. Close the connection
 	printf("6.  Closing the connection...");
 
-	 int SSL_shutdown(SSL *ssl);
+	int SSL_shutdown(SSL *ssl);
 	
 	printf("DONE.\n");
 	
